@@ -55,7 +55,6 @@ class StreamHTTPSocket:
             raise BodyAlreadyRead("the body for this socket is already read")
 
         body_size = self.__headers.get("Content-Length", "-1")
-
         if not body_size.isdigit() or body_size == "-1":
             self.__body_complete = True
             return 0
@@ -74,6 +73,32 @@ class StreamHTTPSocket:
         self.__body_complete = True
 
         return read_bytes
+
+    def discard_body(self, buffer_size: int) -> None:
+        """
+        Reads and discards body of request if it's not needed to ensure socket is clear
+        :param buffer_size: The size of buffer to read
+        :return: None
+        """
+        if self.__body_complete:
+            raise BodyAlreadyRead("the body for this socket is already read")
+
+        body_size = self.__headers.get("Content-Length", "-1")
+        if not body_size.isdigit() or body_size == "-1":
+            self.__body_complete = True
+            return
+
+        body_size = int(body_size)
+
+        read_bytes = 0
+
+        while read_bytes < body_size:
+            data = self.__soc.recv(
+                min(buffer_size, body_size - read_bytes)
+            )
+            read_bytes += len(data)
+
+        self.__body_complete = True
 
     def __parse_buffer(self) -> None:
         """
