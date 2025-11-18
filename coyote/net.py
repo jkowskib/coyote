@@ -26,6 +26,11 @@ class StreamHTTPSocket:
 
     @property
     def body(self):
+        """
+        Gets the body of the HTTP message. If body is discarded an empty array is returned
+        :return: Body as bytearray
+        :raises IncompleteBody: if the body is not processed yet
+        """
         if not self.__body_complete:
             raise IncompleteBody("sockets body has not been read")
         return self.__body
