@@ -50,6 +50,7 @@ class StreamHTTPSocket:
         Reads in the body of the HTTP message from the socket. Only can be run once.
         :param buffer_size: size of buffer to read
         :return: number of bytes read in for the body
+        :raises BodyAlreadyRead: if method is called multiple times
         """
         if self.__body_complete:
             raise BodyAlreadyRead("the body for this socket is already read")
@@ -79,6 +80,7 @@ class StreamHTTPSocket:
         Reads and discards body of request if it's not needed to ensure socket is clear
         :param buffer_size: The size of buffer to read
         :return: None
+        :raises BodyAlreadyRead: if the body for this socket is already read
         """
         if self.__body_complete:
             raise BodyAlreadyRead("the body for this socket is already read")
@@ -104,6 +106,8 @@ class StreamHTTPSocket:
         """
         Attempts to fill fields from the buffer (skips running if there is not enough data to parse)
         :return: None
+        :raises InvalidStatusHeader: if the status header is invalid on the socket
+        :raises InvalidHeader: if the HTTP header is invalid on the socket
         """
         while True:
             region = self.__buffer[self.__buffer_cursor:]
@@ -141,6 +145,15 @@ def send_http_message(
         headers: dict[str, str],
         body: bytes
 ) -> None:
+    """
+    Sends a full HTTP message to the socket.
+    :param sock: socket to send from
+    :param status: HTTP status in order tuple
+    :param headers: HTTP headers
+    :param body: HTTP body
+    :return: None
+    :raises InvalidStatusHeader: if the status header given is invalid
+    """
     data = bytearray()
 
     if len(status) != 3:
