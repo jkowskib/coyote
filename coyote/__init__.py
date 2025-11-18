@@ -16,6 +16,16 @@ class Request:
             body: bytes | None = None,
             stream: net.StreamHTTPSocket | None = None
     ):
+        """
+        An HTTP Request object
+        :param method: HTTP Method
+        :param path: Path of the request
+        :param version: HTTP Version
+        :param headers: HTTP Headers
+        :param body: Body of the request (if any)
+        :param stream: StreamHTTPSocket for streamed request (if any)
+        :raises MissingRequiredFields: if a body nor a stream are given
+        """
         self.method = method
         self.path = path
         self.version = version
@@ -28,6 +38,11 @@ class Request:
 
     @property
     def body(self) -> bytes:
+        """
+        Gets the request body (if any)
+        :return: bytes
+        :raises IncompleteBody: if the body is not processed yet for a streamed Request
+        """
         if self.__body is None:
             return self.__stream.body
         else:
@@ -35,6 +50,12 @@ class Request:
 
     @staticmethod
     def from_socket(sock, buffer_size: int = 1024) -> "Request":
+        """
+        Read a socket and build a Request object
+        :param sock: socket to read from
+        :param buffer_size: size of buffer
+        :return: Request object
+        """
         stream = net.StreamHTTPSocket(sock)
 
         while True:
@@ -50,9 +71,20 @@ class Request:
         )
 
     def read_body(self, buffer_size: int = 1024) -> int:
+        """
+        Reads the body of the request
+        :param buffer_size: buffer size to use
+        :return: Number of bytes read
+        :raises BodyAlreadyRead: if this method is called multiple times
+        """
         return self.__stream.read_body(buffer_size)
 
     def send(self, sock: socket.socket) -> None:
+        """
+        Send Request to a socket in full
+        :param sock: socket to send to
+        :return: None
+        """
         send_http_message(
             sock,
             (self.method, self.path, self.version),
@@ -71,6 +103,16 @@ class Response:
             body: bytes | None = None,
             stream: net.StreamHTTPSocket = None
     ):
+        """
+        HTTP Response object
+        :param version: HTTP Version
+        :param status_code: HTTP Status code
+        :param status_message: HTTP Status message
+        :param headers: HTTP Headers
+        :param body: Response body (if any)
+        :param stream: StreamHTTPSocket for streamed response reading (if any)
+        :raises MissingRequiredFields: if a body nor a stream are given
+        """
         self.version = version
         self.status_code = status_code
         self.status_message = status_message
@@ -90,6 +132,12 @@ class Response:
 
     @staticmethod
     def from_socket(sock, buffer_size: int = 1024) -> "Response":
+        """
+        Read a socket and build a Response object
+        :param sock: socket to read from
+        :param buffer_size: size of buffer
+        :return: Response object
+        """
         stream = net.StreamHTTPSocket(sock)
 
         while True:
@@ -105,9 +153,20 @@ class Response:
         )
 
     def read_body(self, buffer_size: int = 1024) -> int:
+        """
+        Reads body from a Response
+        :param buffer_size: buffer size to use
+        :return: number of bytes read
+        :raises BodyAlreadyRead: if this method is called multiple times
+        """
         return self.__stream.read_body(buffer_size)
 
     def send(self, sock: socket.socket) -> None:
+        """
+        Send Response to a socket in full
+        :param sock: socket to send to
+        :return: None
+        """
         send_http_message(
             sock,
             (self.version, str(self.status_code), self.status_message),
